@@ -7,7 +7,7 @@ laser.on()
 print(laser.print_status())
 
 lambda_start = 1550
-lambda_stop  = 1551
+lambda_stop = 1551
 duration = 2
 trigger_num_points = 1000
 trigger_sweep_rate = 1000
