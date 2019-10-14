@@ -1,111 +1,103 @@
 # ---------------------------------------------------------------------------- #
-# Sweep parameters
-# ---------------------------------------------------------------------------- #
-lambda_start    = 1550 #1500 is lower limit
-lambda_stop     = 1630 #1630 is limit
-duration        = 5
-trigger_step    = 0.01
-sample_rate     = 100e3   # DO NOT CHANGE
-filename_prefix = "sample_device"
-data_directory  = "demo_2/"
-power_dBm       = 3
-address = "COM4"
-
-# ---------------------------------------------------------------------------- #
 # Import libraries
 # ---------------------------------------------------------------------------- #
 
-import nidaqmx
+from DAQinterface import NIDAQInterface
 from TSL550 import TSL550
-import serial.tools.list_ports
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy import signal
-from testSweep import *
 from scipy.signal import find_peaks
-from scipy.stats import linregress
 import os
-import scipy.io as sio
-from pathlib import Path
 import time
 import sys
 from datetime import date
 
 # ---------------------------------------------------------------------------- #
+# Sweep parameters
+# ---------------------------------------------------------------------------- #
+wavelength_startpoint = 1560
+wavelength_endpoint = 1620
+duration = 5
+trigger_step = 0.01
+sample_rate = NIDAQInterface.CARD_TWO_MAX_SAMPLE_RATE
+power_dBm = 5
+
+# ---------------------------------------------------------------------------- #
 # Check input
 # ---------------------------------------------------------------------------- #
 args = sys.argv
-numArgs = len(args)
 device_type = None
 description = None
-output = []
-if numArgs < 2:
+output_ports = []
+if len(args) < 2:
     raise ValueError("Please specify device type.")
-for i in range(1, numArgs):
-    if i == 2:
-        description = args[i]
+for i in range(1, len(args)):
     if i == 1:
         device_type = args[i]
+    if i == 2:
+        description = args[i]
     if i > 2:
-        output.append(args[i])
+        output_ports.append(args[i])
 
 # Check laser's sweep rate
-laser_sweep_rate = (lambda_stop - lambda_start) / duration
+laser_sweep_rate = (wavelength_endpoint - wavelength_startpoint) / duration
 if laser_sweep_rate > 100 or laser_sweep_rate < 0.5:
     raise AttributeError("Invalid laser sweep speed of %f. Must be between 0.5 and 100 nm/s." % laser_sweep_rate)
 
-# TODO: Check for the triggers input too...
-
 # Make folder for Today
 today = date.today()
-
 subdir = device_type + "/" + description
 
 # Create directories if needed
-foldername = str(today.month) + "_" + str(today.day) + "_measurements/" + subdir
-print(foldername)
-for i in range(len(output)):
-    final_foldername = foldername + "/" + output[i]
-    if not os.path.exists(foldername):
-        os.makedirs(foldername)
+folder_name = str(today.month) + "_" + str(today.day) + "_measurements/" + subdir
+print(folder_name)
+for i in range(len(output_ports)):
+    folder_name = folder_name + "/" + output_ports[i]
+
+if os.path.exists(folder_name):
+    user_choice = None
+    print("This folder already exists, so it probably has measurement data in it.\n"
+          "With this description the data will be overwritten, do you wish to proceed? y/n: ")
+    while user_choice != "n" or user_choice != "y":
+        user_choice = input()
+        if user_choice == "n":
+            print("Please choose a different description to prevent data deletion.")
+        else:
+            print("Invalid choice. Please type y or n: ")
+else:
+    os.makedirs(folder_name)
+
 # ---------------------------------------------------------------------------- #
 # Setup devices
 # ---------------------------------------------------------------------------- #
 
 # Initialize laser
-laser = initLaser(address)
-isOn = laser.on()
+print("Opening connection to laser...")
+print("Laser response: ")
+laser = TSL550(TSL550.LASER_PORT)
+laser.on()
 laser.power_dBm(power_dBm)
 laser.openShutter()
 laser.sweep_set_mode(continuous=True, twoway=True, trigger=False, const_freq_step=False)
 laser.trigger_enable_output()
-print(laser.trigger_set_mode("Step"))
-print(laser.trigger_set_step(trigger_step))
+print("Mode:", laser.trigger_set_mode("Step"))
+print("Step size: dlambda = ", laser.trigger_set_step(trigger_step))
 
 # Get number of samples to record. Add buffer just in case.
-numSamples = int(duration * 2 * sample_rate)
-print(numSamples)
-
+num_samples = int(duration * 1.1 * sample_rate)
 time.sleep(0.3)
 
 # Initialize DAQ
-task = []
-for i in range(len(output)):
-    cardNum = int((i + 1) / 4) + 1
-    task.append(initTask(device="cDAQ1Mod" + str(cardNum), channel=["ai" + str((i + 1) % 4), "ai0"], sampleRate=sample_rate,
-                         samples_per_chan=numSamples))
+daq = NIDAQInterface()
+daq.initialize(["cDAQ1Mod1/ai0", "cDAQ1Mod1/ai1", "cDAQ1Mod1/ai2", "cDAQ1Mod1/ai3", "cDAQ1Mod2/ai0"],
+               sample_rate=sample_rate, samples_per_chan=num_samples)
 
 # ---------------------------------------------------------------------------- #
 # Run sweep
 # ---------------------------------------------------------------------------- #
 
-data = []
-wavelength_data = []
-for i in range(len(output)):
-    laser.sweep_wavelength(start=lambda_start, stop=lambda_stop, duration=duration, number=1)
-    data.append(np.array(task[i].read(number_of_samples_per_channel=numSamples, timeout=3*duration)))
-    wavelength_data.append(laser.wavelength_logging())
-
+laser.sweep_wavelength(start=wavelength_startpoint, stop=wavelength_endpoint, duration=duration, number=1)
+data = daq.read(1.1*duration)
 wavelength_logging = laser.wavelength_logging()
 
 # ---------------------------------------------------------------------------- #
@@ -113,28 +105,22 @@ wavelength_logging = laser.wavelength_logging()
 # ---------------------------------------------------------------------------- #
 
 peaks = []
-for i in range(len(output)):
+for i in range(len(output_ports)):
     peak, _ = find_peaks(data[i][1, :], height=3, distance=5)
     peaks.append(peak)
 
-print('==========================================')
-print("Expected number of wavelength points: %d" % int(laser.wavelength_logging_number()))
-print("Actual wavelength points measured in channel 1: %d" % len(peaks))
-print('==========================================')
 
 device_data = []
 device_times = []
 device_wavelengths = []
-for i in range(len(output)):
+for i in range(len(output_ports)):
     device_data.append(data[i][0, peaks[i][0]:peaks[i][-1]])
     device_times.append(np.arange(0, device_data[i].size) / sample_rate)
 
-
-#device_time = np.arange(0, device_data[0].size) / sample_rate
-for i in range(len(output)):
+for i in range(len(output_ports)):
     modPeaks = peaks[i] - peaks[i][0]
     modTime = modPeaks / sample_rate
-    z = np.polyfit(modTime, wavelength_data[i], 2)
+    z = np.polyfit(modTime, wavelength_logging[i], 2)
     p = np.poly1d(z)
     device_wavelengths.append(p(device_times[i]))
 
@@ -144,12 +130,12 @@ for i in range(len(output)):
 
 plt.figure()
 colors = ['y', 'g', 'm', 'b']
-for i in range(len(output)):
+for i in range(len(output_ports)):
     plt.plot(device_wavelengths[i], device_data[i], colors[i])
 
 legends = []
-for i in range(len(output)):
-    legends.append(output[i])
+for i in range(len(output_ports)):
+    legends.append(output_ports[i])
 
 plt.legend(legends)
 plt.xlabel('Wavelength (nm)')
@@ -157,23 +143,14 @@ plt.ylabel('Power (au)')
 plt.grid(True)
 plt.tight_layout()
 
-figname = foldername + "/graph"
-for i in range(len(output)):
-    figname += output[i]
+figname = folder_name + "/graph"
+for i in range(len(output_ports)):
+    figname += output_ports[i]
 figname += ".png"
 plt.savefig(figname)
 
-for i in range(len(output)):
-    np.savez(foldername + "/" + output[i] + "_data.npz",
+for i in range(len(output_ports)):
+    np.savez(folder_name + "/" + output_ports[i] + "_data.npz",
              wavelength=np.squeeze(device_wavelengths[i]), power=np.squeeze(device_data[i]))
 
 plt.show()
-
-# ---------------------------------------------------------------------------- #
-# Cleanup devices
-# ---------------------------------------------------------------------------- #
-
-for i in range(len(output)):
-    task[i].close()
-
-quit()

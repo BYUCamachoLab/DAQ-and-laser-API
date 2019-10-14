@@ -1,4 +1,4 @@
-import nidaqmx
+from DAQinterface import NIDAQInterface
 from TSL550 import TSL550
 import serial.tools.list_ports
 import numpy as np
@@ -6,30 +6,12 @@ from matplotlib import pyplot as plt
 from scipy import signal
 
 
-def addChannel(task, device="cDAQ1Mod1", channel="ai0"):
-    task.ai_channels.add_ai_voltage_chan(device + "/" + channel)
-    return task
-
-
-def updateTime(task,sampleRate,samples_per_chan):
-    print('=========================')
-    print(sampleRate)
-    print(samples_per_chan)
-    print('=========================')
-    task.timing.cfg_samp_clk_timing(sampleRate, samps_per_chan = samples_per_chan)
-    #task.timing.samp_clk_src("cDAQ1Mod1")
-    return task
-
-def initLaser(address="COM4"):
-    return TSL550(address)
-
-
-def runSweep(laser,task,lambdaStart=1530,lambdaEnd=1580,numLambda=10,time=10e-3):
+def runSweep(laser, task, lambdaStart=1530, lambdaEnd=1580, numLambda=1000, time=10e-3):
 
     numChannels = len(task.ai_channels)
-    wavelengthPoints = np.linspace(lambdaStart,lambdaEnd,numLambda)
-    muData         = np.zeros((numLambda,numChannels))
-    sigmaData      = np.zeros((numLambda,numChannels))
+    wavelengthPoints = np.linspace(lambdaStart, lambdaEnd, numLambda)
+    muData = np.zeros((numLambda,numChannels))
+    sigmaData = np.zeros((numLambda,numChannels))
     for k in range(numLambda):
         # Set the wavelength point
         changeWavelength = laser.wavelength(wavelengthPoints[k])
@@ -39,8 +21,8 @@ def runSweep(laser,task,lambdaStart=1530,lambdaEnd=1580,numLambda=10,time=10e-3)
         data = task.read(number_of_samples_per_channel=numSamples)
 
         # Pull the experiment's statistics
-        muData[k,:]    = np.mean(data)
-        sigmaData[k,:] = np.std(data)
+        muData[k, :]    = np.mean(data)
+        sigmaData[k, :] = np.std(data)
     return muData, sigmaData, wavelengthPoints
 
 
@@ -67,7 +49,7 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------ #
 
     # Initialize laser
-    laser = initLaser()
+    laser = TSL550()
     laser.on()
     laser.openShutter()
     laser.sweep_set_mode(continuous=True, twoway=True, trigger=False, const_freq_step=False)
@@ -80,7 +62,8 @@ if __name__ == "__main__":
     print(numSamples)
 
     # Initialize DAQ
-    task = init_task(channel=["ai0","ai1"],sampleRate = sample_rate, samples_per_chan=numSamples)
+    daq = NIDAQInterface()
+    task = daq.initialize(channels=["ai0", "ai1"], sample_rate=sample_rate, samples_per_chan=numSamples)
 
     # ------------------------------------------------------------------------ #
     # Run sweep

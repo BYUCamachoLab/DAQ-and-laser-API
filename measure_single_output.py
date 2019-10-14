@@ -2,16 +2,11 @@
 # Import libraries
 # ---------------------------------------------------------------------------- #
 
-import nidaqmx
+from DAQinterface import NIDAQInterface
 from TSL550 import TSL550
-from DAQinterface import *
-import serial.tools.list_ports
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy import signal
-from testSweep import *
 from scipy.signal import find_peaks
-from scipy.stats import linregress
 import os
 import scipy.io as sio
 from pathlib import Path
@@ -22,23 +17,25 @@ from datetime import date
 # ---------------------------------------------------------------------------- #
 # Sweep parameters
 # ---------------------------------------------------------------------------- #
-wavelength_startpoint = TSL550.MINIMUM_WAVELENGTH  # 1500 is lower limit
-wavelength_endpoint= TSL550.MAXIMUM_WAVELENGTH  # 1630 is limit
+wavelength_startpoint = 1560
+wavelength_endpoint = 1620
 duration = 5
 trigger_step = 0.01
-sample_rate = 100e3   # DO NOT CHANGE
-power_dBm = -10
-
-# Laser Port Parameters
-address = TSL550.LASER_PORT
+sample_rate = NIDAQInterface.CARD_TWO_MAX_SAMPLE_RATE
+power_dBm = 5
 
 # ---------------------------------------------------------------------------- #
 # Check input
 # ---------------------------------------------------------------------------- #
 args = sys.argv
-numArgs = len(args)
-device_type = args[0]
-output = args[1]
+if len(args) < 2:
+    raise ValueError("Please specify device type.")
+device_type = args[1]
+output = args[2]
+description = ""
+if len(args) >= 2:
+    for i in range(len(args) - 2):
+        description += args[i + 2]
 
 
 # Check laser's sweep rate
@@ -70,7 +67,7 @@ if not os.path.exists(folder_path):
 # Initialize laser
 print("Opening connection to laser...")
 print("Laser response: ")
-laser = initLaser(address)
+laser = TSL550(TSL550.LASER_PORT)
 laser.on()
 laser.power_dBm(power_dBm)
 laser.openShutter()
@@ -80,21 +77,19 @@ print("Mode:", laser.trigger_set_mode("Step"))
 print("Step size: dlambda = ", laser.trigger_set_step(trigger_step))
 
 # Get number of samples to record. Add buffer just in case.
-numSamples = int(duration * 2 * sample_rate)
-print("Number of samples: ", numSamples)
-
+num_samples = int(duration * 1.1 * sample_rate)
 time.sleep(0.3)
 
 # Initialize DAQ
-task = init_task(sample_rate=sample_rate, samples_per_chan=numSamples)
-task.add_channels(task, ["cDAQ1Mod1/ai0", "cDAQ1Mod1/ai1"])
+daq = NIDAQInterface()
+daq.initialize(["cDAQ1Mod1/ai0", "cDAQ1Mod1/ai1"], sample_rate=sample_rate, samples_per_chan=num_samples)
 
 # ---------------------------------------------------------------------------- #
 # Run sweep
 # ---------------------------------------------------------------------------- #
 
-laser.sweep_wavelength(start=lambda_start, stop=lambda_stop, duration=duration, number=1)
-data = np.array(task.read(number_of_samples_per_channel=numSamples, timeout=3*duration))
+laser.sweep_wavelength(start=wavelength_startpoint, stop=wavelength_endpoint, duration=duration, number=1)
+data = np.array(daq.read(1.1*duration))
 
 wavelength_logging = laser.wavelength_logging()
 
@@ -102,7 +97,9 @@ wavelength_logging = laser.wavelength_logging()
 # Process data
 # ---------------------------------------------------------------------------- #
 
-peaks, _ = find_peaks(data[1, :], height=3, distance=5)
+# TODO: Update data postprocessing code
+
+peaks, _ = find_peaks(data[0, :], height=3, distance=5)
 
 print('==========================================')
 print("Expected number of wavelength points: %d" % int(laser.wavelength_logging_number()))
@@ -112,10 +109,10 @@ print('==========================================')
 device_data = data[0, peaks[0]:peaks[-1]]
 device_time = np.arange(0, device_data.size) / sample_rate
 
-modPeaks          = peaks - peaks[0]
-modTime           = modPeaks / sample_rate
-z                 = np.polyfit(modTime, wavelength_logging, 2)
-p                 = np.poly1d(z)
+modPeaks = peaks - peaks[0]
+modTime = modPeaks / sample_rate
+z = np.polyfit(modTime, wavelength_logging, 2)
+p = np.poly1d(z)
 device_wavelength = p(device_time)
 
 
@@ -139,9 +136,3 @@ sio.savemat(folder_name + "datamat.mat",
 np.savez(folder_name + "data.npz",
          wavelength=np.squeeze(device_wavelength), power=np.squeeze(device_data))
 plt.show()
-
-# ---------------------------------------------------------------------------- #
-# Cleanup devices
-# ---------------------------------------------------------------------------- #
-
-task.close()
