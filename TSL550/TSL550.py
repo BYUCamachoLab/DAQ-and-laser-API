@@ -2,8 +2,8 @@ from __future__ import division
 import sys
 import time
 import struct
-import serial
 
+import serial
 
 class TSL550:
     # continuous, two-way, external trigger, constant frequency interval
@@ -30,12 +30,7 @@ class TSL550:
     SWEEP_TRIGGER_WAIT = 3
     SWEEP_JUMP = 4
 
-    MINIMUM_WAVELENGTH = 1500
-    MAXIMUM_WAVELENGTH = 1630
-
-    LASER_PORT = "COM4"  # Change based on specific connection settings.
-
-    def __init__(self, address=LASER_PORT, baudrate=9600, terminator="\r"):
+    def __init__(self, address, baudrate=9600, terminator="\r"):
         """
         Connect to the TSL550. Address is the serial port, baudrate
         can be set on the device, terminator is the string the marks
@@ -499,7 +494,7 @@ class TSL550:
         elif val == "Step":
             mode = 3
         else:
-            raise ValueError("Invalide output trigger mode supplied. Choose from None, Stop, Start, and Step.")
+            raise ValueError("Invalid output trigger mode supplied. Choose from None, Stop, Start, and Step.")
         current_state = int(self.write("TM{}".format(mode)))
         if current_state == 1:
             return "Stop"
@@ -545,12 +540,13 @@ class TSL550:
         for nWave in range(int(num_points)):
             while True:
                 try:
-                    in_byte = self.device.read(4)
-                    current_wavelength = float(struct.unpack(">I", in_byte)[0]) / 1e4
+                    in_byte   = self.device.read(4)
+                    current_wavelength = float(struct.unpack(">I",in_byte)[0]) / 1e4
                     break
                 except:
                     print('Failed to read in wavelength data.')
                     pass
+
 
             wavelength_points.append(current_wavelength)
 
@@ -558,7 +554,7 @@ class TSL550:
         self.write("SU")
         return wavelength_points
 
-    def print_status(self):
+    def printStatus(self):
         """
         Query the status of the laser and print its results.
         """

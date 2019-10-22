@@ -1,9 +1,17 @@
+# Contains a class for correlating time-domain data with laser wavelengths based
+# on the laser's trigger signal and wavelengths saved to the buffer.
+# ---------------------------------------------------------------------------- #
+# Dependencies
+# ---------------------------------------------------------------------------- #
 import numpy as np
 import scipy.io as sio
 from scipy.signal import find_peaks
 from scipy.stats import linregress
 from matplotlib import pyplot as graph
 
+# ---------------------------------------------------------------------------- #
+# Data Analysis Class
+# ---------------------------------------------------------------------------- #
 class WavelengthAnalyzer:
     """Simple class that uses a trigger signal
     to convert datasets from time-domain to wavelength."""
@@ -36,6 +44,9 @@ class WavelengthAnalyzer:
         }
         return channelData
 
+# ---------------------------------------------------------------------------- #
+# Pyplot Function
+# ---------------------------------------------------------------------------- #
 def VisualizeData(
         save_path,
         channel,
