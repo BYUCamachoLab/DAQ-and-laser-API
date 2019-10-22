@@ -1,3 +1,5 @@
+#Script for initializing laser and checking values on laser usage settings.
+
 # ---------------------------------------------------------------------------- #
 # Dependencies
 # ---------------------------------------------------------------------------- #
