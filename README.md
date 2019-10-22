@@ -10,7 +10,8 @@ main development branch - used to collect the changes from individual branches a
 Ben - mostly working on NI DAQ box
 
 
-Main development branch files:
+<b>Main development branch files:</b>
+
 TSL550.py - Contains the interface functions for the TSL-550 laser
 
 DAQinterface.py - Containst the NIDAQInterface class intended to be used with the NI DAQ cards.
