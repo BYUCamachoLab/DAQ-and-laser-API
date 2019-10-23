@@ -7,7 +7,7 @@ import os                   # For making directories.
 from pathlib import Path    # Also for directories.
 from datetime import date   # For date stamp.
 #Laser
-from TSL550 import TSL550
+from TSL550.TSL550 import TSL550
 import serial.tools.list_ports
 #Measurement
 
