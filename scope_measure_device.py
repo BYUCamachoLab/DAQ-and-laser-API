@@ -1,7 +1,3 @@
-#To Do Next
-#Continue on "Initialize Devices" section.
-
-
 # ---------------------------------------------------------------------------- #
 # Parameters
 # ---------------------------------------------------------------------------- #
@@ -101,8 +97,6 @@ laser.trigger_enable_output()
 triggerMode = laser.trigger_set_mode("Step")
 triggerStep = laser.trigger_set_step(trigger_step)
 print("Setting trigger to: {} and step to {}".format(triggerMode, triggerStep))
-
-#Wait here for some reason? For the laser to turn on? Something else?
 
 #Get number of samples to record. Add buffer just in case.
 acquireTime = duration + buffer
