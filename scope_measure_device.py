@@ -129,7 +129,7 @@ scope.edge_trigger(
 # Settings Check / Details
 # ---------------------------------------------------------------------------- #
 check_values = {
-    "Acquire Mode": "ACQ:MODE?",
+    #"Acquire Mode": "ACQ:MODE?",
     "ADC Rate": "ACQ:POIN:ARATe?", #Query only.
     "Sample Rate": "ACQ:SRATe?",
     "Real Sample Rate": "ACQ:SRR?",
