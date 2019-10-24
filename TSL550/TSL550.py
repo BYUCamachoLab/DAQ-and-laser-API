@@ -52,7 +52,7 @@ class TSL550:
 
         # Make sure the shutter is on
         #self.is_on = True
-        print(self.write("SU"))
+        print("Status:" + str(self.write("SU")))
         shutter = self.closeShutter()
 
         # Set power management to auto
