@@ -137,7 +137,7 @@ check_values = {
 }
 
 for value, command in check_values.items():
-    print("Scope {} is {:.2e}.".format(value, scope.query(command)))
+    print("Scope {} is {}.".format(value, scope.query(command)))
 
 # ---------------------------------------------------------------------------- #
 # Collect Data
