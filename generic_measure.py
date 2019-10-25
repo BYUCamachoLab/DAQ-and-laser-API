@@ -54,19 +54,18 @@ except:
     subDirName = ""
 
 if force_sub_dir:
-    assert(subDirName != "", "Save directory name required as first argment.")
+    assert subDirName is not "",\
+        "Save directory name required as first argment."
 
 # Check laser settings.
 laserSweepRate = (wavelength_stop - wavelength_start) / duration
 # Todo: Check sweep rate against valid range.
-assert(
-    TSL550.MINIMUM_WAVELENGTH <= wavelength_start <= TSL550.MAXIMUM_WAVELENGTH,
-    "Starting wavelength out of range."
-)
-assert(
-    TSL550.MINIMUM_WAVELENGTH <= wavelength_stop <= TSL550.MAXIMUM_WAVELENGTH,
-    "Ending wavelength out of range."
-)
+assert \
+    TSL550.MINIMUM_WAVELENGTH <= wavelength_start <= TSL550.MAXIMUM_WAVELENGTH,\
+        "Starting wavelength out of range."
+assert \
+    TSL550.MINIMUM_WAVELENGTH <= wavelength_stop <= TSL550.MAXIMUM_WAVELENGTH,\
+        "Ending wavelength out of range."
 
 # ---------------------------------------------------------------------------- #
 # Initialize Save Directory
