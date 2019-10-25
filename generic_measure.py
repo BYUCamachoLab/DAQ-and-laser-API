@@ -10,7 +10,7 @@ trigger_step        = 0.01
 power_dBm           = 7
 
 # Measurement
-device              = "DAQ" # Currently using 'DAQ' or 'SCOPE'
+device              = "SCOPE" # Currently using 'DAQ' or 'SCOPE'
 
 # Saving Data
 save_directory      = "measurements/"
