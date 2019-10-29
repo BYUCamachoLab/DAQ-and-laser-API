@@ -17,6 +17,7 @@ filename_prefix = ""
 filename_suffix = "%_NaCl"
 data_directory  = "measurements/"
 append_date     = True #Appends date to the beginning of the directory.
+use_timestamp   = True
 save_raw_data   = True #Save raw data collected from devices.
 
 #Oscilloscope
