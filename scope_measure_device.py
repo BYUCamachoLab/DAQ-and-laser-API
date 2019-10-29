@@ -23,13 +23,13 @@ save_raw_data   = True #Save raw data collected from devices.
 #Oscilloscope
 scope_IP        = "10.32.112.140" #Oscilloscope IP Address
 take_screenshot = True
-active_channels = [1,2,3] #Channels to activate and use.
+active_channels = [1,2] #Channels to activate and use.
 trigger_channel = 1 #Channel for trigger signal.
 trigger_level   = 1 #Voltage threshold for postitive slope edge trigger.
 channel_setting = {
     #Additional settings to pass to each channel if used.
     1: {"range": 40, "position": -4},
-    2: {"range": 0.1},
+    2: {"range": 2, "position": -2},
     3: {"range": 1}
 }
 
