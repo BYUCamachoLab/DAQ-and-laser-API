@@ -37,7 +37,7 @@ channel_setting = {
 # ---------------------------------------------------------------------------- #
 import os
 from pathlib import Path
-#import time
+import time
 import sys
 from datetime import date
 
@@ -65,8 +65,10 @@ checkWavelength(lambda_stop)
 # ---------------------------------------------------------------------------- #
 # Initialize Save Directory
 # ---------------------------------------------------------------------------- #
+t_obj = time.localtime()
+timestamp = time.strftime("%H:%M:%S", t_obj) if use_timestamp else ""
 today = date.today()
-datePrefix = "{}_{}_{}_".format(today.year, today.month, today.day)
+datePrefix = "{}_{}_{}_".format(today.year, today.month, today.day) + timestamp
 prefix = datePrefix if append_date else ""
 folderName = prefix + data_directory
 folderPath = Path(Path.cwd(), folderName)
