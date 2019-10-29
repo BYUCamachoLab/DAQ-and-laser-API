@@ -67,7 +67,7 @@ checkWavelength(lambda_stop)
 # Initialize Save Directory
 # ---------------------------------------------------------------------------- #
 t_obj = time.localtime()
-timestamp = time.strftime("%H:%M:%S", t_obj) if use_timestamp else ""
+timestamp = time.strftime("%H_%M_%S", t_obj) if use_timestamp else ""
 today = date.today()
 datePrefix = "{}_{}_{}_".format(today.year, today.month, today.day) + timestamp
 prefix = datePrefix if append_date else ""
