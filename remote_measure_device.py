@@ -1,7 +1,3 @@
-#To Do Next
-#Continue on "Initialize Devices" section.
-
-
 # ---------------------------------------------------------------------------- #
 # Parameters
 # ---------------------------------------------------------------------------- #
@@ -102,8 +98,6 @@ triggerMode = laser.trigger_set_mode("Step")
 triggerStep = laser.trigger_set_step(trigger_step)
 print("Setting trigger to: {} and step to {}".format(triggerMode, triggerStep))
 
-#Wait here for some reason? For the laser to turn on? Something else?
-
 #Get number of samples to record. Add buffer just in case.
 acquireTime = duration + buffer
 numSamples = int((acquireTime) * sample_rate)
@@ -135,7 +129,7 @@ scope.edge_trigger(
 # Settings Check / Details
 # ---------------------------------------------------------------------------- #
 check_values = {
-    "Acquire Mode": "ACQ:MODE?",
+    #"Acquire Mode": "ACQ:MODE?",
     "ADC Rate": "ACQ:POIN:ARATe?", #Query only.
     "Sample Rate": "ACQ:SRATe?",
     "Real Sample Rate": "ACQ:SRR?",
@@ -143,7 +137,7 @@ check_values = {
 }
 
 for value, command in check_values.items():
-    print("Scope {} is {:.2e}.".format(value, scope.query(command)))
+    print("Scope {} is {}.".format(value, scope.query(command)))
 
 # ---------------------------------------------------------------------------- #
 # Collect Data
@@ -204,14 +198,3 @@ data[1:] = [
     #List comprehension to put all the datasets in this one array.
     analysis.process_data(rawData[channel]) for channel in active_channels
 ]
-
-print("Raw Datasets: {}".format(len(rawData)))
-print("Datasets Returned: {}".format((len(data))))
-
-# ---------------------------------------------------------------------------- #
-# Generate Visuals & Save Data
-# ---------------------------------------------------------------------------- #
-for channel in active_channels:
-    if (channel != trigger_channel):
-        print("Displaying data for channel " + str(channel))
-        VisualizeData(folderName + filename, channel, **(data[channel]))

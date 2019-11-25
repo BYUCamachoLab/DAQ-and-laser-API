@@ -1,7 +1,3 @@
-#To Do Next
-#Continue on "Initialize Devices" section.
-
-
 # ---------------------------------------------------------------------------- #
 # Parameters
 # ---------------------------------------------------------------------------- #
@@ -12,7 +8,7 @@ duration        = 5
 trigger_step    = 0.01
 power_dBm       = 7
 #Data Collection
-sample_rate     = 20e12
+sample_rate     = 10e9
 buffer          = 5 #Additional time around duration to prevent timeout.
 
 #Save Data
@@ -21,18 +17,20 @@ filename_prefix = ""
 filename_suffix = "%_NaCl"
 data_directory  = "measurements/"
 append_date     = True #Appends date to the beginning of the directory.
-save_raw_data   = False #Save raw data collected from devices.
-inc_temp_data   = False #Saves temporary sets of data during data processing.
+use_timestamp   = True
+save_raw_data   = True #Save raw data collected from devices.
 
 #Oscilloscope
 scope_IP        = "10.32.112.140" #Oscilloscope IP Address
+take_screenshot = True
 active_channels = [1,2] #Channels to activate and use.
-trigger_channel = 2 #Channel for trigger signal.
+trigger_channel = 1 #Channel for trigger signal.
 trigger_level   = 1 #Voltage threshold for postitive slope edge trigger.
 channel_setting = {
     #Additional settings to pass to each channel if used.
-    1: {"range": 2, "position": -2},
-    2: {"range": 40,},
+    1: {"range": 40, "position": -4},
+    2: {"range": 2, "position": -2},
+    3: {"range": 1}
 }
 
 # ---------------------------------------------------------------------------- #
@@ -40,22 +38,16 @@ channel_setting = {
 # ---------------------------------------------------------------------------- #
 import os
 from pathlib import Path
-#import time
+import time
 import sys
 from datetime import date
-
-import numpy as np
-from scipy import signal
-from scipy.signal import find_peaks
-from scipy.stats import linregress
-import scipy.io as sio
-from matplotlib import pyplot as plt
 
 from TSL550 import TSL550
 import serial.tools.list_ports
 from laser_control import *
 
 from RTO.controller import RTO as connectScope
+from data_processing import WavelengthAnalyzer, VisualizeData
 
 # ---------------------------------------------------------------------------- #
 # Check Input
@@ -74,8 +66,10 @@ checkWavelength(lambda_stop)
 # ---------------------------------------------------------------------------- #
 # Initialize Save Directory
 # ---------------------------------------------------------------------------- #
+t_obj = time.localtime()
+timestamp = time.strftime("%H_%M_%S_", t_obj) if use_timestamp else ""
 today = date.today()
-datePrefix = "{}_{}_{}_".format(today.year, today.month, today.day)
+datePrefix = "{}_{}_{}_".format(today.year, today.month, today.day) + timestamp
 prefix = datePrefix if append_date else ""
 folderName = prefix + data_directory
 folderPath = Path(Path.cwd(), folderName)
@@ -107,21 +101,19 @@ triggerMode = laser.trigger_set_mode("Step")
 triggerStep = laser.trigger_set_step(trigger_step)
 print("Setting trigger to: {} and step to {}".format(triggerMode, triggerStep))
 
-#Wait here for some reason? For the laser to turn on? Something else?
-
 #Get number of samples to record. Add buffer just in case.
 acquireTime = duration + buffer
 numSamples = int((acquireTime) * sample_rate)
-print("Collecting {} samples @ {} samples/s.".format(numSamples, sample_rate))
+print("Set for {:.2E} Samples @ {:.2E} Sa/s.".format(numSamples, sample_rate))
 
 #Oscilloscope Settings
 print("Initializing Oscilloscope")
 scope = connectScope(scope_IP)
 scope.acquisition_settings(
     sample_rate = sample_rate,
-    duration = acquireTime
+    duration = acquireTime,
+    force_realtime = True
 )
-#Add channels.
 for channel in active_channels:
     channelMode = "Trigger" if (channel == trigger_channel) else "Data"
     print("Adding Channel {} - {}".format(channel, channelMode))
@@ -135,6 +127,20 @@ scope.edge_trigger(
     source_channel = trigger_channel,
     trigger_level = trigger_level
 )
+
+# ---------------------------------------------------------------------------- #
+# Settings Check / Details
+# ---------------------------------------------------------------------------- #
+check_values = {
+    #"Acquire Mode": "ACQ:MODE?",
+    "ADC Rate": "ACQ:POIN:ARATe?", #Query only.
+    "Sample Rate": "ACQ:SRATe?",
+    "Real Sample Rate": "ACQ:SRR?",
+    "Max Samples": "ACQ:POIN:MAX?",
+}
+
+for value, command in check_values.items():
+    print("Scope {} is {}.".format(value, scope.query(command)))
 
 # ---------------------------------------------------------------------------- #
 # Collect Data
@@ -156,10 +162,13 @@ laser.sweep_wavelength(
 #Wait for Measurement Completion
 print('Waiting for acquisition to complete.')
 scope.wait_for_device()
+#Take Screenshot
+if take_screenshot:
+    scope.take_screenshot(folderName + "screenshot.png")
 
 #Acquire Data
 rawData = [None] #Ugly hack to make the numbers line up nicely.
-rawData[1:-1] = [scope.get_data_ascii(channel) for channel in active_channels]
+rawData[1:] = [scope.get_data_ascii(channel) for channel in active_channels]
 wavelengthLog = laser.wavelength_logging()
 wavelengthLogSize = laser.wavelength_logging_number()
 
@@ -167,67 +176,39 @@ wavelengthLogSize = laser.wavelength_logging_number()
 if save_raw_data:
     print("Saving raw data.")
     for channel in active_channels:
-        with open(foldername + "CHAN{}_Raw.txt".format(channel), "w") as out:
+        with open(folderName + "CHAN{}_Raw.txt".format(channel), "w") as out:
             out.write(str(rawData[channel]))
-    with open(foldername + "Wavelength_Log.txt") as out:
+    with open(folderName + "Wavelength_Log.txt", "w") as out:
         out.write(str(wavelengthLog))
 
 # ---------------------------------------------------------------------------- #
 # Process Data
 # ---------------------------------------------------------------------------- #
-#Todo: check height and distance settings below and adjust if necessary.
-peaks, _ = find_peaks(rawData[trigger_channel], height = 3, distance = 5)
+print("Processing Data")
+analysis = WavelengthAnalyzer(
+    sample_rate = sample_rate,
+    wavelength_log = wavelengthLog,
+    trigger_data = rawData[trigger_channel]
+)
 
 print('=' * 30)
-print("Expected number of wavelength points: {}".format(wavelengthLogSize))
-print("Measured number of wavelength points: {}".format(len(peaks)))
+print("Expected number of wavelength points: " + str(int(wavelengthLogSize)))
+print("Measured number of wavelength points: " + str(analysis.num_peaks()))
 print('=' * 30)
 
-#ToDo: Make the following work for an arbitrary number of channels.
+data = [None] #Really ugly hack to make index numbers line up.
+data[1:] = [
+    #List comprehension to put all the datasets in this one array.
+    analysis.process_data(rawData[channel]) for channel in active_channels
+]
 
-#Take data points between first and last peaks in trigger channel signal.
-deviceData = rawData[0][peaks[0]:peaks[-1]]
-#Time relative to the first collected data point.
-deviceTime = np.arange(len(deviceData)) / sample_rate
-
-modPeaks = peaks - peaks[0] #Make relative to the first point.
-modTime = modPeaks / sample_rate
-fitting = np.polyfit(modTime, wavelengthLog, 2) #Least-squares fit.
-mapping = np.poly1d(fitting) #Create function mapping time to wavelength.
-deviceWavelength = mapping(deviceTime) #Get wavelengths at times.
-
-#Generate Data Hashes
-wavelengthHash = hash(tuple(deviceWavelength))
-dataHash = hash(tuple(deviceData))
+print("Raw Datasets: {}".format(len(rawData)))
+print("Datasets Returned: {}".format((len(data))))
 
 # ---------------------------------------------------------------------------- #
 # Generate Visuals & Save Data
 # ---------------------------------------------------------------------------- #
-#Create Visualization
-plt.figure()
-plt.plot(deviceWavelength, deviceData)
-plt.xlabel('Wavelength (nm)')
-plt.ylabel('Power (au)')
-plt.grid(True)
-plt.tight_layout()
-
-#Save Data
-plt.savefig(folderName + filename + ".png")
-sio.savemat(
-    folderName + filename + ".mat",
-    {
-        'wavelength': wavelengthHash,
-        'power': dataHash
-    }
-)
-np.savez(
-    folderName + filename + ".npz",
-    wavelength = np.squeeze(deviceWavelength),
-    power = np.squeeze(deviceData)
-)
-
-#Show Vizualization
-plt.show()
-# ---------------------------------------------------------------------------- #
-# Cleanup
-# ---------------------------------------------------------------------------- #
+for channel in active_channels:
+    if (channel != trigger_channel):
+        print("Displaying data for channel " + str(channel))
+        VisualizeData(folderName + filename, channel, **(data[channel]))
