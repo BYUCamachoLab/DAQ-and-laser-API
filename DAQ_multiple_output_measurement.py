@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------- #
 
 from DAQinterface import NIDAQInterface
-from TSL550 import TSL550
+from TSL550.TSL550 import TSL550
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
@@ -56,14 +56,14 @@ for i in range(len(output_ports)):
 
 if os.path.exists(folder_name):
     user_choice = None
-    print("This folder already exists, so it probably has measurement data in it.\n"
+    print("\nThis folder already exists, so it probably has measurement data in it.\n"
           "With this description the data will be overwritten, do you wish to proceed? y/n: ")
     while user_choice != "n" or user_choice != "y":
         user_choice = input()
         if user_choice == "n":
-            print("Please choose a different description to prevent data deletion.")
+            print("\nPlease choose a different description to prevent data deletion.\n")
         else:
-            print("Invalid choice. Please type y or n: ")
+            print("\nInvalid choice. Please type y or n: ")
 else:
     os.makedirs(folder_name)
 
@@ -83,8 +83,8 @@ laser.trigger_enable_output()
 print("Mode:", laser.trigger_set_mode("Step"))
 print("Step size: dlambda = ", laser.trigger_set_step(trigger_step))
 
-# Get number of samples to record. Add buffer just in case.
-num_samples = int(duration * 1.1 * sample_rate)
+# Get number of samples to record.
+num_samples = int(duration * sample_rate)
 time.sleep(0.3)
 
 # Initialize DAQ
@@ -97,30 +97,27 @@ daq.initialize(["cDAQ1Mod1/ai0", "cDAQ1Mod1/ai1", "cDAQ1Mod1/ai2", "cDAQ1Mod1/ai
 # ---------------------------------------------------------------------------- #
 
 laser.sweep_wavelength(start=wavelength_startpoint, stop=wavelength_endpoint, duration=duration, number=1)
-data = daq.read(1.1*duration)
+data = daq.read(duration)
+times_read = np.arange(0, duration, 1./sample_rate)
 wavelength_logging = laser.wavelength_logging()
 
 # ---------------------------------------------------------------------------- #
 # Process data
 # ---------------------------------------------------------------------------- #
 
-peaks = []
-for i in range(len(output_ports)):
-    peak, _ = find_peaks(data[i][1, :], height=3, distance=5)
-    peaks.append(peak)
-
+peaks, _ = find_peaks(data[0, :], height=3, distance=5)
 
 device_data = []
 device_times = []
 device_wavelengths = []
-for i in range(len(output_ports)):
-    device_data.append(data[i][0, peaks[i][0]:peaks[i][-1]])
-    device_times.append(np.arange(0, device_data[i].size) / sample_rate)
+for i in range(1, len(output_ports) + 1):
+    device_data.append(data[i, peaks[i, 0]:peaks[i, -1]])
+    device_times.append(times_read[peaks[i, 0]:peaks[i, -1]])
 
 for i in range(len(output_ports)):
-    modPeaks = peaks[i] - peaks[i][0]
+    modPeaks = peaks - peaks[0]
     modTime = modPeaks / sample_rate
-    z = np.polyfit(modTime, wavelength_logging[i], 2)
+    z = np.polyfit(modTime, wavelength_logging, 2)
     p = np.poly1d(z)
     device_wavelengths.append(p(device_times[i]))
 
