@@ -550,7 +550,6 @@ class TSL550:
                     current_wavelength = float(struct.unpack(">I", in_byte)[0]) / 1e4
                     break
                 except:
-                    print('Failed to read in wavelength data.')
                     pass
 
             wavelength_points.append(current_wavelength)

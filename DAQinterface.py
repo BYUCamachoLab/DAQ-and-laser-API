@@ -26,14 +26,14 @@ class NIDAQInterface:
         self.sample_rate = None
         self.samples_per_channel = None
 
-    def add_channel(self, device, channel):
+    def add_channel(self, channel):
         """
         Adds a channel to the NIDAQ Task object.
         :param device: the device name
         :param channel: the channel name
         :return: n/a
         """
-        self.task.ai_channels.add_ai_voltage_chan(device + "/" + channel)
+        self.task.ai_channels.add_ai_voltage_chan(channel)
 
     def add_channels(self, channels):
         """
