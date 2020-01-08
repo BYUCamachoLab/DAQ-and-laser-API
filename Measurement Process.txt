@@ -1,0 +1,31 @@
+#Import Libraries
+    #Import General Libraries
+    #Import DAQ or Oscilloscope
+#Set Parameters
+    #Set Generic
+    #Set DAQ/Oscilloscope Parameters
+#Check Input
+    #Get Arguments
+    #Check Laser Settings (in range?)
+#Initialize Save Directory
+#Initialize Devices
+    #Connect & Initialize Laser
+    #Initialize Measurement Device (DAQ/Oscope)
+#Check Settings (Again?)
+    #Read back settings from the device, in case they were out of range and got autoset.
+#Collect Data
+    #Scope
+        #Start acquisition.
+        #Sweep laser.
+        #Wait for completion.
+        #Take screenshot.
+        #Query scope data.
+        #Query laser data.
+        #Save raw data.
+    #DAQ
+        #Sweep laser.
+        #Collect data.
+        #Query laser data.
+#Process Data
+#Draw Visuals
+#Cleanup (DAQ only)

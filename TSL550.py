@@ -2,8 +2,8 @@ from __future__ import division
 import sys
 import time
 import struct
-
 import serial
+
 
 class TSL550:
     # continuous, two-way, external trigger, constant frequency interval
@@ -33,9 +33,9 @@ class TSL550:
     MINIMUM_WAVELENGTH = 1500
     MAXIMUM_WAVELENGTH = 1630
 
-    LASER_PORT = "COM4" # Change based on specific connection settings.
+    LASER_PORT = "COM4"  # Change based on specific connection settings.
 
-    def __init__(self, address, baudrate=9600, terminator="\r"):
+    def __init__(self, address=LASER_PORT, baudrate=9600, terminator="\r"):
         """
         Connect to the TSL550. Address is the serial port, baudrate
         can be set on the device, terminator is the string the marks
