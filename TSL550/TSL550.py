@@ -52,7 +52,8 @@ class TSL550:
 
         # Make sure the shutter is on
         #self.is_on = True
-        print(self.write("SU"))
+        print(str(self.write("*IDN?")))
+        print("Status:" + str(self.write("SU")))
         shutter = self.closeShutter()
 
         # Set power management to auto
@@ -549,7 +550,6 @@ class TSL550:
                     current_wavelength = float(struct.unpack(">I", in_byte)[0]) / 1e4
                     break
                 except:
-                    print('Failed to read in wavelength data.')
                     pass
 
             wavelength_points.append(current_wavelength)
