@@ -1,7 +1,5 @@
 import nidaqmx
 
-# TODO: Add documentation
-
 
 class NIDAQInterface:
 
