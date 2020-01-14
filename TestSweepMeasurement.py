@@ -11,7 +11,10 @@ trigger_step = 0.01
 sample_rate = NIDAQInterface.CARD_TWO_MAX_SAMPLE_RATE
 power_dBm = 10
 measurement_folder = "Measurement_Data/"
+# For offset finding
 output_channel_list = ["cDAQ1Mod1/ai1", "cDAQ1Mod1/ai2", "cDAQ1Mod1/ai3", "cDAQ1Mod2/ai0"]
+# For S-parameter measurements
+#output_channel_list = ["cDAQ1Mod1/ai1", "cDAQ1Mod1/ai2", "cDAQ1Mod1/ai3", "cDAQ1Mod2/ai0", "cDAQ1Mod2/ai1"]
 device_type = "test device"
 description = "test"
 output_ports = ["test1", "test2", "test3", "test4"]

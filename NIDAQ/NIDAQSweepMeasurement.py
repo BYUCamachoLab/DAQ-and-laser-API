@@ -55,7 +55,6 @@ class NIDAQSweepMeasurement(SweepMeasurement):
                                     duration=self.duration, number=1)
 
     def _read_data(self):
-        self._initialize_devices()
         self.data = np.array(self.daq.read(self.duration * 1.5))
         self.times_read = np.arange(0, self.duration * 1.5, 1. / self.sample_rate)
         self.wavelength_logging = np.array(self.laser.wavelength_logging())
@@ -73,4 +72,4 @@ class NIDAQSweepMeasurement(SweepMeasurement):
         conversion_fit_function = np.poly1d(time_wavelength_conversion_fit)
         lined_up_wavelength_points = np.array(conversion_fit_function(device_times))
 
-        return np.concatenate((np.transpose(lined_up_wavelength_points), device_data), 1)
+        return np.concatenate((np.transpose(lined_up_wavelength_points), device_data), axis=0)

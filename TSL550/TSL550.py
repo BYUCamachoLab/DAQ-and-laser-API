@@ -51,7 +51,7 @@ class TSL550:
         self.terminator = terminator
 
         # Make sure the shutter is on
-        #self.is_on = True
+        self.is_on = True
         print(str(self.write("*IDN?")))
         print("Status:" + str(self.write("SU")))
         shutter = self.closeShutter()
