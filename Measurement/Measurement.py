@@ -101,4 +101,4 @@ class Measurement(ABC):
     def get_data(self):
 
         self._check_measurement_performed()
-        self._get_data()
+        return self._get_data()

@@ -21,7 +21,7 @@ class SweepMeasurement(Measurement, ABC):
 
     """
 
-    OSCOPE_CHANNEL_COLORS = ['y', 'g', 'm', 'b']
+    OSCOPE_CHANNEL_COLORS = ['y', 'g', 'm', 'b', 'k']
 
     def __init__(self):
         """
@@ -126,8 +126,8 @@ class SweepMeasurement(Measurement, ABC):
     def _visualize_data(self, save_figure):
         plt.figure()
         for i in range(1, len(self.output_ports) + 1):
-            if i < 5:
-                color = self.OSCOPE_CHANNEL_COLORS[i]
+            if i < len(self.OSCOPE_CHANNEL_COLORS) + 1:
+                color = self.OSCOPE_CHANNEL_COLORS[i - 1]
             else:
                 color = _generate_random_color_hexcode()
             plt.plot(self.result_data[0, :], self.result_data[i, :], color)

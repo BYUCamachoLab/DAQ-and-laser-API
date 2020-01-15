@@ -61,10 +61,8 @@ class NIDAQSweepMeasurement(SweepMeasurement):
 
     def _interpolate_data(self):
         peaks, _ = find_peaks(self.data[0, :], height=3, distance=5)
-        device_data = self.data[:, peaks]
+        device_data = self.data[1:, peaks]
         device_times = self.times_read[peaks]
-        #for i in range(1, len(self.output_ports) + 1):
-        #    device_data.append(self.data[i, peaks])
 
         peak_spacing = peaks - peaks[0]
         time_between_peaks = peak_spacing / self.sample_rate
@@ -72,4 +70,4 @@ class NIDAQSweepMeasurement(SweepMeasurement):
         conversion_fit_function = np.poly1d(time_wavelength_conversion_fit)
         lined_up_wavelength_points = np.array(conversion_fit_function(device_times))
 
-        return np.concatenate((np.transpose(lined_up_wavelength_points), device_data), axis=0)
+        return np.concatenate((lined_up_wavelength_points[np.newaxis, :], device_data), axis=0)

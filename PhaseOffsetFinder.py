@@ -185,9 +185,9 @@ def find_phase_offset(sweep_data, TEST=False):
     #    i = i + 1
 
     wavelength = sweep_data[0, :]
-    power = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
+    power_data = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
 
-    one = DeviceResult('Device_21', wavelength, power)
+    one = DeviceResult('Device_21', wavelength, power_data)
 
     one.powerNorm = copy.deepcopy(one.power)
     plt.figure()
@@ -221,7 +221,7 @@ def find_phase_offset(sweep_data, TEST=False):
         lower_fit = interp1d(x[lower_peaks], power_negative[lower_peaks], kind='cubic', fill_value='extrapolate')
         bottom_baseline = lower_fit(x)
         power_negative /= bottom_baseline
-        power = -(power_negative - 1)
+        power = np.array(-(power_negative - 1))
 
         top_pkidx = find_peaks(power, height=height, distance=distance, width=width)[0]
         p = interp1d(x[top_pkidx], power[top_pkidx], kind='cubic', fill_value='extrapolate')
