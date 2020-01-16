@@ -2,7 +2,7 @@
 # Import libraries
 # ---------------------------------------------------------------------------- #
 
-from NIDAQ.NIDAQinterface import NIDAQInterface
+from NIDAQ.NIDAQ import NIDAQ
 from TSL550.TSL550 import TSL550
 import numpy as np
 from matplotlib import pyplot as plt
@@ -22,7 +22,7 @@ def multiple_output_sweep(device_type: str, description: str, output_ports: list
     wavelength_endpoint = 1620
     duration = 5
     trigger_step = 0.01
-    sample_rate = NIDAQInterface.CARD_TWO_MAX_SAMPLE_RATE
+    sample_rate = NIDAQ.CARD_TWO_MAX_SAMPLE_RATE
     power_dBm = 10
     measurement_folder = "Measurement_Data/"
     output_channel_list = ["cDAQ1Mod1/ai1", "cDAQ1Mod1/ai2", "cDAQ1Mod1/ai3", "cDAQ1Mod2/ai0"]
@@ -86,7 +86,7 @@ def multiple_output_sweep(device_type: str, description: str, output_ports: list
     time.sleep(0.3)
 
     # Initialize DAQ
-    daq = NIDAQInterface()
+    daq = NIDAQ()
     daq.initialize(["cDAQ1Mod1/ai0"],
                    sample_rate=sample_rate, samples_per_chan=num_samples)
     for i in range(len(output_ports)):

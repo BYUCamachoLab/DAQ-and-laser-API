@@ -1,5 +1,5 @@
 
-from NIDAQ.NIDAQinterface import NIDAQInterface
+from NIDAQ.NIDAQ import NIDAQ
 from NIDAQ.NIDAQSweepMeasurement import NIDAQSweepMeasurement
 from PhaseOffsetFinder import find_phase_offset
 
@@ -8,7 +8,7 @@ wavelength_startpoint = 1560
 wavelength_endpoint = 1620
 duration = 5
 trigger_step = 0.01
-sample_rate = NIDAQInterface.CARD_TWO_MAX_SAMPLE_RATE
+sample_rate = NIDAQ.CARD_TWO_MAX_SAMPLE_RATE
 power_dBm = 10
 measurement_folder = "Measurement_Data/"
 
@@ -31,7 +31,7 @@ test_measurement = NIDAQSweepMeasurement(wavelength_startpoint,
                                          description,
                                          output_ports)
 test_measurement.perform_measurement()
-test_measurement.visualize_data(save_figure=True)
+test_measurement.visualize_data(save_figure=True, show_figure=True)
 test_measurement.save_data()
 
-#find_phase_offset(test_measurement.get_data())
+find_phase_offset(test_measurement.get_data())

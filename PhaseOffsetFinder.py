@@ -167,25 +167,27 @@ class DeviceResult:
         return phi0, phi1, phi2
 
 
-def find_phase_offset(sweep_data, TEST=False):
+def find_phase_offset(sweep_data=None, TEST=False):
     # Read in the data
-    #filenames = sys.argv[1:5]
+    filenames = ["X1_data.npz", "X2_data.npz", "P1_data.npz", "P2_data.npz"]
+    for i in range(len(filenames)):
+        filenames[i] = "C:\\Users\\camacho\\Desktop\\Data_Acquisition\\Measurement_Data" \
+                       "\\D21_00\\offset_finding\\" + filenames[i]
+    print(filenames)
 
-    #print(filenames)
+    wavelength = np.array([])
+    power_data = np.zeros((5001, 4))
 
-    #wavelength = np.array([])
-    #power = np.zeros((5001, 4))
+    i = 0
+    for filename in filenames:
+        filedata = np.load(filename, mmap_mode='r')
 
-    #i = 0
-    #for filename in filenames:
-    #    filedata = np.load(filename, mmap_mode='r')
+        wavelength = np.array(filedata['wavelength']) * 1e-9
+        power_data[:, i] = 20 * np.log10(np.array(filedata['power']).clip(min=0.0000001))
+        i = i + 1
 
-    #    wavelength = np.array(filedata['wavelength']) * 1e-9
-    #    power[:, i] = 20 * np.log10(np.array(filedata['power']).clip(min=0.0000001))
-    #    i = i + 1
-
-    wavelength = sweep_data[0, :]
-    power_data = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
+    #wavelength = sweep_data[0, :]
+    #power_data = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
 
     one = DeviceResult('Device_21', wavelength, power_data)
 

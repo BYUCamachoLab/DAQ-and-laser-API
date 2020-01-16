@@ -1,6 +1,6 @@
 from Measurement.SweepMeasurement import SweepMeasurement
 from TSL550.TSL550 import TSL550
-from NIDAQ.NIDAQinterface import NIDAQInterface
+from NIDAQ.NIDAQ import NIDAQ
 import time
 import numpy as np
 from scipy.signal import find_peaks
@@ -13,7 +13,7 @@ class NIDAQSweepMeasurement(SweepMeasurement):
 
         super().__init__(lambda_start, lambda_end, dur, trig_step, samp_rate,
                          power, folder, chan_list, dev_type, desc, ports)
-        self.daq = NIDAQInterface()
+        self.daq = NIDAQ()
 
     def _initialize_daq(self):
 
@@ -58,6 +58,7 @@ class NIDAQSweepMeasurement(SweepMeasurement):
         self.data = np.array(self.daq.read(self.duration * 1.5))
         self.times_read = np.arange(0, self.duration * 1.5, 1. / self.sample_rate)
         self.wavelength_logging = np.array(self.laser.wavelength_logging())
+        self.daq.close()
 
     def _interpolate_data(self):
         peaks, _ = find_peaks(self.data[0, :], height=3, distance=5)

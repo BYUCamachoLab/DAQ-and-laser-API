@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import random
 
+
 def _generate_random_color_hexcode():
     r = lambda: random.randint(0, 255)
     return '#%02X%02X%02X' % (r(), r(), r())
@@ -56,7 +57,7 @@ class Measurement(ABC):
         pass
 
     @abstractmethod
-    def _visualize_data(self, save_figure):
+    def _visualize_data(self, save_figure, show_figure):
         pass
 
     @abstractmethod
@@ -78,7 +79,7 @@ class Measurement(ABC):
         self._perform_measurement()
         self.measurement_performed = True
 
-    def visualize_data(self, save_figure=False):
+    def visualize_data(self, save_figure=False, show_figure=False):
         """
         Plots the data in a useful form for the measurement type.
         Requirement: The function perform_measurement must have been run before running this function.
@@ -86,7 +87,7 @@ class Measurement(ABC):
         :return: n/a
         """
         self._check_measurement_performed()
-        self._visualize_data(save_figure)
+        self._visualize_data(save_figure, show_figure)
 
     def save_data(self):
         """

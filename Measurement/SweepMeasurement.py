@@ -123,7 +123,7 @@ class SweepMeasurement(Measurement, ABC):
         self._read_data()
         self.result_data = self._interpolate_data()
 
-    def _visualize_data(self, save_figure):
+    def _visualize_data(self, save_figure, show_figure):
         plt.figure()
         for i in range(1, len(self.output_ports) + 1):
             if i < len(self.OSCOPE_CHANNEL_COLORS) + 1:
@@ -144,6 +144,9 @@ class SweepMeasurement(Measurement, ABC):
 
         if save_figure:
             plt.savefig(self.directory + "graph")
+        if show_figure:
+            plt.show()
+
 
     def _save_data(self):
         for i in range(len(self.output_ports)):
