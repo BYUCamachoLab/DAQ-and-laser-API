@@ -168,7 +168,7 @@ class DeviceResult:
 
 
 def find_phase_offset(sweep_data=None, TEST=False):
-    # Read in the data
+    #Read in the data
     filenames = ["X1_data.npz", "X2_data.npz", "P1_data.npz", "P2_data.npz"]
     for i in range(len(filenames)):
         filenames[i] = "C:\\Users\\camacho\\Desktop\\Data_Acquisition\\Measurement_Data" \
@@ -186,8 +186,11 @@ def find_phase_offset(sweep_data=None, TEST=False):
         power_data[:, i] = 20 * np.log10(np.array(filedata['power']).clip(min=0.0000001))
         i = i + 1
 
-    #wavelength = sweep_data[0, :]
-    #power_data = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
+    # wavelength = sweep_data[0, :]
+    # power_data = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
+
+    # wavelength = wavelength[:-1000]
+    # power_data = power_data[:-1000]
 
     one = DeviceResult('Device_21', wavelength, power_data)
 
@@ -372,3 +375,7 @@ def find_phase_offset(sweep_data=None, TEST=False):
     one.plotPolarPhaseAtFreq(freq_array[2], mini, True)
     plt.title("c.")
     plt.show()
+
+
+if __name__ == "__main__":
+    find_phase_offset(None, True)

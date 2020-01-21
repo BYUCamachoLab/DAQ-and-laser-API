@@ -34,4 +34,4 @@ test_measurement.perform_measurement()
 test_measurement.visualize_data(save_figure=True, show_figure=True)
 test_measurement.save_data()
 
-find_phase_offset(test_measurement.get_data())
+find_phase_offset(test_measurement.get_data(), TEST=True)
