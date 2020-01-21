@@ -1,3 +1,6 @@
 .idea
 Measurement_Data
 venv
+
+env
+.vscode
