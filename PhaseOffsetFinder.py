@@ -172,7 +172,7 @@ def find_phase_offset(sweep_data=None, TEST=False):
     filenames = ["X1_data.npz", "X2_data.npz", "P1_data.npz", "P2_data.npz"]
     for i in range(len(filenames)):
         filenames[i] = "C:\\Users\\camacho\\Desktop\\Data_Acquisition\\Measurement_Data" \
-                       "\\D21_00\\offset_finding\\" + filenames[i]
+                "\\D21_00\\offset_finding\\" + filenames[i]
     print(filenames)
 
     wavelength = np.array([])
@@ -205,7 +205,7 @@ def find_phase_offset(sweep_data=None, TEST=False):
         amplitude_baseline = np.polyval(p, one.wavelength - np.mean(one.wavelength))
         amplitude_corrected = amplitude - amplitude_baseline
         amplitude_corrected = amplitude_corrected + max(amplitude_baseline) - max(amplitude)
-        plt.plot(one.wavelength * 1e9, amplitude_corrected, label='Normalized')
+        plt.plot(one.wavelength * 1e9, amplitude_corrected, label='GC removed')
         plt.legend()
         plt.xlim((1560, 1620))
         one.powerNorm[:, i] = amplitude_corrected
@@ -219,15 +219,16 @@ def find_phase_offset(sweep_data=None, TEST=False):
     for i in range(0, NUM_PORTS):
         x = one.wavelength
 
-        power_negative = -one.powerLinearNorm[:, i]
-        offset = -np.amin(power_negative)
-        power_negative += offset
-        lower_peaks = find_peaks(power_negative, height=height, distance=distance, width=width)[0]
-        lower_fit = interp1d(x[lower_peaks], power_negative[lower_peaks], kind='cubic', fill_value='extrapolate')
-        bottom_baseline = lower_fit(x)
-        power_negative /= bottom_baseline
-        power = np.array(-(power_negative - 1))
+        # power_negative = -one.powerLinearNorm[:, i]
+        # offset = -np.amin(power_negative)
+        # power_negative += offset
+        # lower_peaks = find_peaks(power_negative, height=height, distance=distance, width=width)[0]
+        # lower_fit = interp1d(x[lower_peaks], power_negative[lower_peaks], kind='cubic', fill_value='extrapolate')
+        # bottom_baseline = lower_fit(x)
+        # power_negative /= bottom_baseline
+        # power = np.array(-(power_negative - 1))
 
+        power = one.powerLinearNorm[:, i]
         top_pkidx = find_peaks(power, height=height, distance=distance, width=width)[0]
         p = interp1d(x[top_pkidx], power[top_pkidx], kind='cubic', fill_value='extrapolate')
         top_baseline = p(x)
@@ -243,8 +244,13 @@ def find_phase_offset(sweep_data=None, TEST=False):
         plt.show()
 
     # print("Device \'" + one.filename + "\': Converting from wavelength to frequency")
+    # Slice off the bottom of the array which has wild tails due to spline fitting
     one.frequency = np.flip(freq(one.wavelength) / 1e12)
     one.powerLinearNormByFreq = np.flipud(one.powerLinearNorm)
+    print(one.frequency.shape, one.powerLinearNormByFreq.shape)
+    one.frequency = one.frequency[50:]
+    one.powerLinearNormByFreq = one.powerLinearNormByFreq[50:, :]
+    print(one.frequency.shape, one.powerLinearNormByFreq.shape)
     # print("\n")
     # print("Data Preview:")
     # print("=============")
@@ -255,7 +261,6 @@ def find_phase_offset(sweep_data=None, TEST=False):
         plt.subplot(NUM_PORTS, 1, i + 1)
         plt.title('Port ' + str(i + 1))
         plt.plot(one.frequency, one.powerLinearNormByFreq[:, i])
-        plt.xlim((freq(1620 * 1e-9) * 1e-12, freq(1560 * 1e-9) * 1e-12))
     if TEST:
         plt.show()
 
@@ -289,7 +294,6 @@ def find_phase_offset(sweep_data=None, TEST=False):
         plt.title('Port ' + str(i + 1))
         plt.plot(one.frequency, one.powerLinearNormByFreq[:, i], label='Normalized')
         plt.plot(one.freqHighSamp, one.powerHighSampNorm[:, i], label='Fit to Spline')
-        plt.xlim((freq(1620 * 1e-9) * 1e-12, freq(1560 * 1e-9) * 1e-12))
         plt.legend()
     if TEST:
         plt.show()
