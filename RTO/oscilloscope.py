@@ -14,7 +14,7 @@ except ImportError:
     from . import VISAresourceExtentions
 
 #------------------------------------------------------------------------------#
-#Instrument Class
+# Instrument Class
 #------------------------------------------------------------------------------#
 class RTO:
     """ Simple network controller class for R&S RTO oscilloscopes. """
