@@ -61,7 +61,7 @@ class Measurement(ABC):
         pass
 
     @abstractmethod
-    def _save_data(self):
+    def _save_data(self, save_npz=True, save_mat=True):
         pass
 
     @abstractmethod
@@ -89,7 +89,7 @@ class Measurement(ABC):
         self._check_measurement_performed()
         self._visualize_data(save_figure, show_figure)
 
-    def save_data(self):
+    def save_data(self, save_npz=True, save_mat=True):
         """
         Saves the data in a useful form.
         Requirement: The function perform_measurement must have been run before running this function.
@@ -97,7 +97,7 @@ class Measurement(ABC):
         :return: n/a
         """
         self._check_measurement_performed()
-        self._save_data()
+        self._save_data(save_npz, save_mat)
 
     def get_data(self):
 

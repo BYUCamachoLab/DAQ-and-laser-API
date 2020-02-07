@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import os
 from matplotlib import pyplot as plt
 import numpy as np
+from scipy.io import savemat
 from Measurement.Measurement import Measurement, _generate_random_color_hexcode
 
 
@@ -147,11 +148,15 @@ class SweepMeasurement(Measurement, ABC):
         if show_figure:
             plt.show()
 
-
-    def _save_data(self):
+    def _save_data(self, save_npz=True, save_mat=True):
         for i in range(len(self.output_ports)):
-            np.savez(self.directory + self.output_ports[i] + "_data.npz",
-                     wavelength=np.squeeze(self.result_data[0, :]), power=np.squeeze(self.result_data[i + 1, :]))
+            if save_npz:
+                np.savez(self.directory + self.output_ports[i] + "_data.npz",
+                         wavelength=np.squeeze(self.result_data[0, :]), power=np.squeeze(self.result_data[i + 1, :]))
+            if save_mat:
+                savemat(self.directory + self.output_ports[i] + "data.mat",
+                        {"wavelength": np.squeeze(self.result_data[0, :]),
+                         "power": np.squeeze(self.result_data[i + 1, :])}, appendmat=False)
 
     def _get_data(self):
         return self.result_data
