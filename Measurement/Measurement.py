@@ -3,6 +3,10 @@ import random
 
 
 def _generate_random_color_hexcode():
+    """
+    Function for generating a random hexcode for plot color
+    :return:
+    """
     r = lambda: random.randint(0, 255)
     return '#%02X%02X%02X' % (r(), r(), r())
 
@@ -16,9 +20,11 @@ class Measurement(ABC):
     they want to run. The abstract functions must have the same functionality as the public methods that match
     their name.
 
-    Instance variables:
+    Note: perform_measurement must be called before the other public methods, otherwise there is no data to display.
 
-    :param self.measurement_performed - A boolean value indicating whether a measurement has been performed yet.
+    Instance variables:
+    :param self.measurement_performed - A boolean indicating whether a measurement has been performed yet.
+    :param self.parameters_set - A boolean indicating whether the measurement parameters have been set yet.
     """
 
     class MeasurementNotPerformedException(Exception):
@@ -100,6 +106,8 @@ class Measurement(ABC):
         self._save_data(save_npz, save_mat)
 
     def get_data(self):
-
+        """
+        :return: The measurement data in processed form.
+        """
         self._check_measurement_performed()
         return self._get_data()

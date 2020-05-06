@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------- #
 
 from DAQinterface import NIDAQInterface
-from TSL550.TSL550 import TSL550
+from Laser.TSL550 import TSL550
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks

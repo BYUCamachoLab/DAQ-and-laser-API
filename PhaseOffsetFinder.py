@@ -9,7 +9,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 import csaps
-import sys
 
 # Settings
 smoothing = 1
@@ -167,57 +166,42 @@ class DeviceResult:
         return phi0, phi1, phi2
 
 
-def find_phase_offset(sweep_data=None, TEST=False):
-    #Read in the data
-    filenames = ["X1_data.npz", "X2_data.npz", "P1_data.npz", "P2_data.npz"]
-    for i in range(len(filenames)):
-        filenames[i] = "C:\\Users\\camacho\\Desktop\\Data_Acquisition\\Measurement_Data" \
-                "\\D21_00\\offset_finding\\" + filenames[i]
-    print(filenames)
+def find_phase_offset(file_names: list, TEST=False):
 
     wavelength = np.array([])
     power_data = np.zeros((5001, 4))
 
-    i = 0
-    for filename in filenames:
-        filedata = np.load(filename, mmap_mode='r')
+    for i in range(len(file_names)):
+        file_data = np.load(file_names[i], mmap_mode='r')
 
-        wavelength = np.array(filedata['wavelength']) * 1e-9
-        power_data[:, i] = 20 * np.log10(np.array(filedata['power']).clip(min=0.0000001))
-        i = i + 1
+        wavelength = np.array(file_data['wavelength']) * 1e-9
+        power_data[:, i] = 20 * np.log10(np.array(file_data['power']).clip(min=0.0000001))
 
-    # wavelength = sweep_data[0, :]
-    # power_data = np.transpose(20 * np.log10(sweep_data[1:, :].clip(min=0.0000001)))
-
-    # wavelength = wavelength[:-1000]
-    # power_data = power_data[:-1000]
-
-    one = DeviceResult('Device_21', wavelength, power_data)
-
-    one.powerNorm = copy.deepcopy(one.power)
+    device_results = DeviceResult('Device_21', wavelength, power_data)
+    power_norm = copy.deepcopy(device_results.power)
     plt.figure()
-    plt.suptitle('Device ' + one.filename)
+    plt.suptitle('Device ' + device_results.filename)
     for i in range(0, NUM_PORTS):
         plt.subplot(NUM_PORTS, 1, i + 1)
-        amplitude = one.power[:, i]
-        plt.plot(one.wavelength * 1e9, amplitude, label='Measured')
-        p = np.polyfit(one.wavelength - np.mean(one.wavelength), amplitude, one.POLY_ORDER)
-        amplitude_baseline = np.polyval(p, one.wavelength - np.mean(one.wavelength))
+        amplitude = device_results.power[:, i]
+        plt.plot(device_results.wavelength * 1e9, amplitude, label='Measured')
+        p = np.polyfit(device_results.wavelength - np.mean(device_results.wavelength), amplitude, device_results.POLY_ORDER)
+        amplitude_baseline = np.polyval(p, device_results.wavelength - np.mean(device_results.wavelength))
         amplitude_corrected = amplitude - amplitude_baseline
         amplitude_corrected = amplitude_corrected + max(amplitude_baseline) - max(amplitude)
-        plt.plot(one.wavelength * 1e9, amplitude_corrected, label='GC removed')
+        plt.plot(device_results.wavelength * 1e9, amplitude_corrected, label='GC removed')
         plt.legend()
         plt.xlim((1560, 1620))
-        one.powerNorm[:, i] = amplitude_corrected
+        power_norm[:, i] = amplitude_corrected
     if TEST:
         plt.show()
 
-    powers = 10 ** (one.powerNorm / 20)
+    powers = 10 ** (power_norm / 20)
     plt.figure()
-    plt.suptitle('Device ' + one.filename)
-    one.powerLinearNorm = copy.deepcopy(powers)
+    plt.suptitle('Device ' + device_results.filename)
+    device_results.powerLinearNorm = copy.deepcopy(powers)
     for i in range(0, NUM_PORTS):
-        x = one.wavelength
+        x = device_results.wavelength
 
         # power_negative = -one.powerLinearNorm[:, i]
         # offset = -np.amin(power_negative)
@@ -228,7 +212,7 @@ def find_phase_offset(sweep_data=None, TEST=False):
         # power_negative /= bottom_baseline
         # power = np.array(-(power_negative - 1))
 
-        power = one.powerLinearNorm[:, i]
+        power = device_results.powerLinearNorm[:, i]
         top_pkidx = find_peaks(power, height=height, distance=distance, width=width)[0]
         p = interp1d(x[top_pkidx], power[top_pkidx], kind='cubic', fill_value='extrapolate')
         top_baseline = p(x)
@@ -239,18 +223,18 @@ def find_phase_offset(sweep_data=None, TEST=False):
         plt.plot(x * 1e9, power)
         plt.plot(x * 1e9, top_baseline)
         plt.xlim((1560, 1620))
-        one.powerLinearNorm[:, i] = power / top_baseline
+        device_results.powerLinearNorm[:, i] = power / top_baseline
     if TEST:
         plt.show()
 
     # print("Device \'" + one.filename + "\': Converting from wavelength to frequency")
     # Slice off the bottom of the array which has wild tails due to spline fitting
-    one.frequency = np.flip(freq(one.wavelength) / 1e12)
-    one.powerLinearNormByFreq = np.flipud(one.powerLinearNorm)
-    print(one.frequency.shape, one.powerLinearNormByFreq.shape)
-    one.frequency = one.frequency[50:]
-    one.powerLinearNormByFreq = one.powerLinearNormByFreq[50:, :]
-    print(one.frequency.shape, one.powerLinearNormByFreq.shape)
+    device_results.frequency = np.flip(freq(device_results.wavelength) / 1e12)
+    device_results.powerLinearNormByFreq = np.flipud(device_results.powerLinearNorm)
+    print(device_results.frequency.shape, device_results.powerLinearNormByFreq.shape)
+    device_results.frequency = device_results.frequency[50:]
+    device_results.powerLinearNormByFreq = device_results.powerLinearNormByFreq[50:, :]
+    print(device_results.frequency.shape, device_results.powerLinearNormByFreq.shape)
     # print("\n")
     # print("Data Preview:")
     # print("=============")
@@ -260,75 +244,75 @@ def find_phase_offset(sweep_data=None, TEST=False):
     for i in range(0, NUM_PORTS):
         plt.subplot(NUM_PORTS, 1, i + 1)
         plt.title('Port ' + str(i + 1))
-        plt.plot(one.frequency, one.powerLinearNormByFreq[:, i])
+        plt.plot(device_results.frequency, device_results.powerLinearNormByFreq[:, i])
     if TEST:
         plt.show()
 
     # print("Smoothing:", smoothing)
-    one.sp = []
-    one.sp.append(
-        csaps.UnivariateCubicSmoothingSpline(one.frequency, one.powerLinearNormByFreq[:, 0], smooth=smoothing))
-    one.sp.append(
-        csaps.UnivariateCubicSmoothingSpline(one.frequency, one.powerLinearNormByFreq[:, 1], smooth=smoothing))
-    one.sp.append(
-        csaps.UnivariateCubicSmoothingSpline(one.frequency, one.powerLinearNormByFreq[:, 2], smooth=smoothing))
-    one.sp.append(
-        csaps.UnivariateCubicSmoothingSpline(one.frequency, one.powerLinearNormByFreq[:, 3], smooth=smoothing))
+    device_results.sp = []
+    device_results.sp.append(
+        csaps.UnivariateCubicSmoothingSpline(device_results.frequency, device_results.powerLinearNormByFreq[:, 0], smooth=smoothing))
+    device_results.sp.append(
+        csaps.UnivariateCubicSmoothingSpline(device_results.frequency, device_results.powerLinearNormByFreq[:, 1], smooth=smoothing))
+    device_results.sp.append(
+        csaps.UnivariateCubicSmoothingSpline(device_results.frequency, device_results.powerLinearNormByFreq[:, 2], smooth=smoothing))
+    device_results.sp.append(
+        csaps.UnivariateCubicSmoothingSpline(device_results.frequency, device_results.powerLinearNormByFreq[:, 3], smooth=smoothing))
 
     N = 10000
-    one.freqHighSamp = np.linspace(min(one.frequency), max(one.frequency), num=N)
-    powerHighSamp0 = one.sp[0](one.freqHighSamp)
+    device_results.freqHighSamp = np.linspace(min(device_results.frequency), max(device_results.frequency), num=N)
+    powerHighSamp0 = device_results.sp[0](device_results.freqHighSamp)
     powerHighSamp0 = powerHighSamp0 / max(powerHighSamp0)
-    powerHighSamp1 = one.sp[1](one.freqHighSamp)
+    powerHighSamp1 = device_results.sp[1](device_results.freqHighSamp)
     powerHighSamp1 = powerHighSamp1 / max(powerHighSamp1)
-    powerHighSamp2 = one.sp[2](one.freqHighSamp)
+    powerHighSamp2 = device_results.sp[2](device_results.freqHighSamp)
     powerHighSamp2 = powerHighSamp2 / max(powerHighSamp2)
-    powerHighSamp3 = one.sp[3](one.freqHighSamp)
+    powerHighSamp3 = device_results.sp[3](device_results.freqHighSamp)
     powerHighSamp3 = powerHighSamp3 / max(powerHighSamp3)
-    one.powerHighSampNorm = np.stack((powerHighSamp0, powerHighSamp1, powerHighSamp2, powerHighSamp3), axis=1)
+    device_results.powerHighSampNorm = np.stack((powerHighSamp0, powerHighSamp1, powerHighSamp2, powerHighSamp3), axis=1)
 
     plt.figure()
-    plt.suptitle(one.filename)
+    plt.suptitle(device_results.filename)
     for i in range(0, NUM_PORTS):
         plt.subplot(NUM_PORTS, 1, i + 1)
         plt.title('Port ' + str(i + 1))
-        plt.plot(one.frequency, one.powerLinearNormByFreq[:, i], label='Normalized')
-        plt.plot(one.freqHighSamp, one.powerHighSampNorm[:, i], label='Fit to Spline')
+        plt.plot(device_results.frequency, device_results.powerLinearNormByFreq[:, i], label='Normalized')
+        plt.plot(device_results.freqHighSamp, device_results.powerHighSampNorm[:, i], label='Fit to Spline')
         plt.legend()
     if TEST:
         plt.show()
 
-    cosine_fit, cosine_covariance = curve_fit(cos_squared, one.freqHighSamp, one.powerHighSampNorm[:, i])
-    plt.plot(one.freqHighSamp, one.powerHighSampNorm[:, i])
-    plt.plot(one.freqHighSamp, cos_squared(one.freqHighSamp, *cosine_fit))
+    cosine_fit, cosine_covariance = curve_fit(cos_squared, device_results.freqHighSamp, device_results.powerHighSampNorm[:, i])
+    plt.plot(device_results.freqHighSamp, device_results.powerHighSampNorm[:, i])
+    plt.plot(device_results.freqHighSamp, cos_squared(device_results.freqHighSamp, *cosine_fit))
     if TEST:
         plt.show()
 
     # print("====================")
     # print(one.filename)
-    one.global_result = [None] * NUM_PORTS
-    one.local_result = [None] * NUM_PORTS
+    device_results.global_result = [None] * NUM_PORTS
+    device_results.local_result = [None] * NUM_PORTS
     for port in range(NUM_PORTS):
-        Jmod = lambda x: J(one.freqHighSamp, one.powerHighSampNorm[:, port], x)
+        Jmod = lambda x: J(device_results.freqHighSamp, device_results.powerHighSampNorm[:, port], x)
         bounds = [(0, 40), (0, 2 * np.pi)]
         # Global optimization
-        one.global_result[port] = differential_evolution(Jmod, bounds)
+        device_results.global_result[port] = differential_evolution(Jmod, bounds)
         # Convex optimization
-        one.local_result[port] = minimize(Jmod, one.global_result[port].x, method='nelder-mead')
+        device_results.local_result[port] = minimize(Jmod, device_results.global_result[port].x, method='nelder-mead')
         # Verbose
         # print('Port ' + str(port+1))
         # print('Global:', one.global_result[port].x, one.global_result[port].fun)
         # print('Local:', one.local_result[port].x, one.local_result[port].fun)
 
     plt.figure()
-    plt.suptitle(one.filename)
+    plt.suptitle(device_results.filename)
 
     for port in range(NUM_PORTS):
         plt.subplot(NUM_PORTS, 1, port + 1)
-        one.plotPowerLinearNormByFreq(port)
-        one.plotPowerHighSampNormByFreq(port)
-        one.plotGlobalOptimizationCurve(port)
-        one.plotLocalOptimizationCurve(port)
+        device_results.plotPowerLinearNormByFreq(port)
+        device_results.plotPowerHighSampNormByFreq(port)
+        device_results.plotGlobalOptimizationCurve(port)
+        device_results.plotLocalOptimizationCurve(port)
         plt.xlabel("Frequency (THz)")
         plt.ylabel("Amplitude (arbitrary units)")
         plt.xlim((freq(1620 * 1e-9) * 1e-12, freq(1560 * 1e-9) * 1e-12))
@@ -336,22 +320,22 @@ def find_phase_offset(sweep_data=None, TEST=False):
     if TEST:
         plt.show()
 
-    phasediff = one.phase(one.frequency, 0) - one.phase(one.frequency, 2)
+    phasediff = device_results.phase(device_results.frequency, 0) - device_results.phase(device_results.frequency, 2)
     middleindex = min(range(len(phasediff)), key=lambda i: abs(phasediff[i] - (np.pi / 2)))
-    print("CROSSOVER FREQUENCY: ", one.frequency[middleindex], "THz")
+    print("CROSSOVER FREQUENCY: ", device_results.frequency[middleindex], "THz")
     c0 = 299792458  # m/s
-    crossover_wavelength = c0 / (one.frequency[middleindex] * 1e12)
+    crossover_wavelength = c0 / (device_results.frequency[middleindex] * 1e12)
     print("CROSSOVER WAVELENGTH:", crossover_wavelength * 1e9, "nm")
 
-    middlefreq = one.frequency[middleindex]
+    middlefreq = device_results.frequency[middleindex]
 
-    freq_array = [min(one.frequency), middlefreq, max(one.frequency)]
+    freq_array = [min(device_results.frequency), middlefreq, max(device_results.frequency)]
     fig = plt.figure(constrained_layout=True, figsize=(18, 16), dpi=80, facecolor='w', edgecolor='k')
     gs = fig.add_gridspec(3, 3)
     ax = fig.add_subplot(gs[0, :])
 
     for i in range(NUM_PORTS):
-        one.plotPowerLinearNormByFreq(i)
+        device_results.plotPowerLinearNormByFreq(i)
 
     for i in range(3):
         plt.axvline(freq_array[i], ls='--', color='0.0')
@@ -360,7 +344,7 @@ def find_phase_offset(sweep_data=None, TEST=False):
     plt.grid(True)
 
     ax = fig.add_subplot(gs[1, :])
-    one.plotPhase()
+    device_results.plotPhase()
     for i in range(3):
         plt.axvline(freq_array[i], ls='--', color='0.0')
     plt.ylabel("Phase (rad)")
@@ -368,18 +352,24 @@ def find_phase_offset(sweep_data=None, TEST=False):
     plt.grid(True)
 
     mini = fig.add_subplot(gs[2, 0])
-    one.plotPolarPhaseAtFreq(freq_array[0], mini, True)
+    device_results.plotPolarPhaseAtFreq(freq_array[0], mini, True)
     plt.title("a.")
 
     mini = fig.add_subplot(gs[2, 1])
-    one.plotPolarPhaseAtFreq(freq_array[1], mini, True)
+    device_results.plotPolarPhaseAtFreq(freq_array[1], mini, True)
     plt.title("b.")
 
     mini = fig.add_subplot(gs[2, 2])
-    one.plotPolarPhaseAtFreq(freq_array[2], mini, True)
+    device_results.plotPolarPhaseAtFreq(freq_array[2], mini, True)
     plt.title("c.")
     plt.show()
 
 
 if __name__ == "__main__":
-    find_phase_offset(None, True)
+    
+    file_names = ["X1_data.npz", "X2_data.npz", "P1_data.npz", "P2_data.npz"]
+    # Read in the data
+    for i in range(len(file_names)):
+        file_names[i] = "C:\\Users\\camacho\\Desktop\\Data_Acquisition\\Measurement_Data" \
+                "\\D21_00\\offset_finding\\" + file_names[i]
+    find_phase_offset(file_names, True)
