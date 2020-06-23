@@ -1,16 +1,6 @@
 # DAQ-and-laser-API
 For using the NI-DAQmx library and the DAQ cards with the TSL-550 laser for data acquisition
 
-<b><u>Branches</b></u>
-
-master - branch used for tested code that works 100%
-
-main development branch - used to collect the changes from individual branches and integration test
-
-Ben - mostly working on NI DAQ box
-
-Tommy - primarily work on the oscilloscope
-
 <b>Main development branch files:</b>
 
 TSL550.py - Contains the interface functions for the TSL-550 laser
