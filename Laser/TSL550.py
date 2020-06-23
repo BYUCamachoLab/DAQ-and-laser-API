@@ -37,7 +37,7 @@ class TSL550:
 
     def __init__(self, address=LASER_PORT, baudrate=9600, terminator="\r"):
         """
-        Connect to the TSL550. Address is the serial port, baudrate
+        Connect to the Laser. Address is the serial port, baudrate
         can be set on the device, terminator is the string the marks
         the end of the command.
         """
@@ -51,7 +51,7 @@ class TSL550:
         self.terminator = terminator
 
         # Make sure the shutter is on
-        #self.is_on = True
+        self.is_on = True
         print(str(self.write("*IDN?")))
         print("Status:" + str(self.write("SU")))
         shutter = self.closeShutter()
@@ -65,7 +65,7 @@ class TSL550:
 
     def write(self, command):
         """
-        Write a command to the TSL550. Returns the response (if any).
+        Write a command to the Laser. Returns the response (if any).
         """
 
         # Convert to bytes (Python 3 compatibility)
@@ -354,13 +354,13 @@ class TSL550:
     def sweep_status(self):
         """
         Check on the current condition of the sweeping function. It
-        will return one of TSL550.SWEEP_OFF, TSL550.SWEEP_RUNNING,
-        TSL550.SWEEP_PAUSED, TSL550.SWEEP_TRIGGER_WAIT,
-        TSL550.SWEEP_JUMP. The first three states are
+        will return one of Laser.SWEEP_OFF, Laser.SWEEP_RUNNING,
+        Laser.SWEEP_PAUSED, Laser.SWEEP_TRIGGER_WAIT,
+        Laser.SWEEP_JUMP. The first three states are
         self-explanatory, but the last two require more detail. If the
-        status is TSL550.SWEEP_TRIGGER_WAIT, that means that the sweep
+        status is Laser.SWEEP_TRIGGER_WAIT, that means that the sweep
         has been set to start on an external trigger and that trigger
-        has not yet been received. If the status is TSL550.SWEEP_JUMP,
+        has not yet been received. If the status is Laser.SWEEP_JUMP,
         that means that the laser is transitioning between the end of
         one sweep and the start of the next in one-way sweep mode.
         """

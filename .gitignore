@@ -1,3 +1,10 @@
 .idea
 Measurement_Data
+<<<<<<< HEAD
 venv
+
+env
+.vscode
+=======
+venv
+>>>>>>> master

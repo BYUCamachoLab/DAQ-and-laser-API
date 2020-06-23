@@ -15,7 +15,7 @@ power_dBm       = 4
 # ---------------------------------------------------------------------------- #
 
 import nidaqmx
-from TSL550 import TSL550
+from Laser import TSL550
 import serial.tools.list_ports
 import numpy as np
 from matplotlib import pyplot as plt
@@ -49,7 +49,7 @@ today = date.today()
 
 
 
-# Create directory if needed
+# Create path if needed
 foldername = Path(os.getcwd(), str(today.month) + "_" + str(today.day) + "_measurments/")
 print(foldername)
 if not os.path.exists(foldername):

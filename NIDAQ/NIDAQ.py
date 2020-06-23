@@ -1,9 +1,7 @@
 import nidaqmx
 
-# TODO: Add documentation
 
-
-class NIDAQInterface:
+class NIDAQ:
 
     """
     API class for interfacing with a DAQ card to read input.
@@ -82,5 +80,8 @@ class NIDAQInterface:
             data = task.read(number_of_samples_per_channel=self.DEFAULT_SAMPLES_PER_CHANNEL)
             return data
 
-    def __del__(self):
+    def close(self):
         self.task.close()
+
+    #def __del__(self):
+    #    self.task.close()

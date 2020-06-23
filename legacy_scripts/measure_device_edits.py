@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------- #
 
 import nidaqmx
-from TSL550 import TSL550
+from Laser import TSL550
 import serial.tools.list_ports
 import numpy as np
 from matplotlib import pyplot as plt
@@ -57,7 +57,7 @@ if laser_sweep_rate > 100 or laser_sweep_rate < 0.5:
 # Make folder for Today
 today = date.today()
 
-# Create directory if needed
+# Create path if needed
 
 subdir = ""
 if device_type is not "":

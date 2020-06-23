@@ -1,4 +1,4 @@
-from TSL550 import TSL550
+from Laser import TSL550
 import time
 
 address = "COM4"

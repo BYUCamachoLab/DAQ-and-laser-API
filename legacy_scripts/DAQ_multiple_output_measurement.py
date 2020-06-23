@@ -2,8 +2,8 @@
 # Import libraries
 # ---------------------------------------------------------------------------- #
 
-from DAQinterface import NIDAQInterface
-from TSL550.TSL550 import TSL550
+from NIDAQ.NIDAQ import NIDAQ
+from Laser.TSL550 import TSL550
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
@@ -22,7 +22,7 @@ def multiple_output_sweep(device_type: str, description: str, output_ports: list
     wavelength_endpoint = 1620
     duration = 5
     trigger_step = 0.01
-    sample_rate = NIDAQInterface.CARD_TWO_MAX_SAMPLE_RATE
+    sample_rate = NIDAQ.CARD_TWO_MAX_SAMPLE_RATE
     power_dBm = 10
     measurement_folder = "Measurement_Data/"
     output_channel_list = ["cDAQ1Mod1/ai1", "cDAQ1Mod1/ai2", "cDAQ1Mod1/ai3", "cDAQ1Mod2/ai0"]
@@ -86,7 +86,7 @@ def multiple_output_sweep(device_type: str, description: str, output_ports: list
     time.sleep(0.3)
 
     # Initialize DAQ
-    daq = NIDAQInterface()
+    daq = NIDAQ()
     daq.initialize(["cDAQ1Mod1/ai0"],
                    sample_rate=sample_rate, samples_per_chan=num_samples)
     for i in range(len(output_ports)):
@@ -107,10 +107,9 @@ def multiple_output_sweep(device_type: str, description: str, output_ports: list
 
     peaks, _ = find_peaks(data[0, :], height=3, distance=5)
     device_data = []
-    device_times = []
+    device_times = times_read[peaks]
     for i in range(1, len(output_ports) + 1):
         device_data.append(data[i, peaks])
-        device_times.append(times_read[peaks])
 
     peak_spacing = peaks - peaks[0]
     time_between_peaks = peak_spacing / sample_rate
@@ -142,7 +141,7 @@ def multiple_output_sweep(device_type: str, description: str, output_ports: list
 
     for i in range(len(output_ports)):
         np.savez(folder_name + output_ports[i] + "_data.npz",
-                 wavelength=np.squeeze(lined_up_wavelength_points[i]), power=np.squeeze(device_data[i]))
+                 wavelength=np.squeeze(lined_up_wavelength_points), power=np.squeeze(device_data[i]))
 
     plt.show()
 

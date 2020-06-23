@@ -1,5 +1,5 @@
 from DAQinterface import NIDAQInterface
-from TSL550 import TSL550
+from Laser import TSL550
 import serial.tools.list_ports
 import numpy as np
 from matplotlib import pyplot as plt
